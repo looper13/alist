@@ -32,7 +32,7 @@
     <img src="https://img.shields.io/docker/pulls/xhofe/alist?color=%2348BB78&logo=docker&label=pulls" alt="Downloads" />
   </a>
   <a href="https://alistgo.com/guide/sponsor.html">
-    <img src="https://img.shields.io/badge/%24-sponsor-F87171.svg" alt="sponsor" />
+    <img src="https://img.shields.io/badge/%24-sponsor-F87171.svg" alt="sponsor" />1
   </a>
 </div>
 </div>
