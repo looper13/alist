@@ -33,6 +33,7 @@ jobs:
           repository: looper13/alist-web
           ref: main
           path: alist-web
+          submodules: recursive
 
       - uses: benjlevesque/short-sha@v3.0
         id: short-sha
