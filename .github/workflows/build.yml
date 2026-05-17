@@ -5,6 +5,7 @@ on:
     branches: [ 'main' ]
   pull_request:
     branches: [ 'main' ]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -15,14 +16,9 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest]
-        target: 
-          - darwin-amd64
-          - darwin-arm64
+        target:
           - windows-amd64
-          - linux-arm64-musl
-          - linux-amd64-musl
-          - windows-arm64
-          - android-arm64
+          - linux-amd64
     name: Build
     runs-on: ${{ matrix.platform }}
     env:
@@ -59,5 +55,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: alist_${{ env.SHA }}_${{ matrix.target }}
+          name: alist_${{ steps.short-sha.outputs.sha }}_${{ matrix.target }}
           path: build/*
