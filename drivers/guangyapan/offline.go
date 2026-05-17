@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"net/url"
 	stdpath "path"
+	"sort"
 	"strings"
 
 	"github.com/alist-org/alist/v3/internal/model"
 )
+
+const guangYaPanOfflineMinFileSize = 300 * 1024 * 1024
 
 func (d *GuangYaPan) ResolveOfflineResource(ctx context.Context, fileURL string) (*OfflineResolveData, error) {
 	if err := d.ensureAccessToken(ctx); err != nil {
@@ -29,6 +32,7 @@ func (d *GuangYaPan) ResolveOfflineResource(ctx context.Context, fileURL string)
 	if !isSuccessMsg(resp.Msg) {
 		return nil, fmt.Errorf("resolve offline resource failed: %s", strings.TrimSpace(resp.Msg))
 	}
+	resp.Data.filterSmallBTSubfiles()
 	return &resp.Data, nil
 }
 
@@ -152,15 +156,56 @@ func (d OfflineResolveData) fileIndexes() []int {
 	if d.BTResInfo == nil || len(d.BTResInfo.Subfiles) == 0 {
 		return nil
 	}
+	excluded := d.excludedFileIndexes()
 	indexes := make([]int, 0, len(d.BTResInfo.Subfiles))
 	for i, file := range d.BTResInfo.Subfiles {
+		index := i
 		if file.FileIndex != nil {
-			indexes = append(indexes, *file.FileIndex)
+			index = *file.FileIndex
+		}
+		if _, ok := excluded[index]; ok {
 			continue
 		}
-		indexes = append(indexes, i)
+		indexes = append(indexes, index)
 	}
 	return indexes
+}
+
+func (d *OfflineResolveData) filterSmallBTSubfiles() {
+	if d == nil || d.BTResInfo == nil || len(d.BTResInfo.Subfiles) == 0 {
+		return
+	}
+	excluded := d.excludedFileIndexes()
+	for i, file := range d.BTResInfo.Subfiles {
+		if file.FileSize >= guangYaPanOfflineMinFileSize {
+			continue
+		}
+		index := i
+		if file.FileIndex != nil {
+			index = *file.FileIndex
+		}
+		excluded[index] = struct{}{}
+	}
+	if len(excluded) == 0 {
+		d.BTResInfo.ExcludeIndices = nil
+		return
+	}
+	d.BTResInfo.ExcludeIndices = make([]int, 0, len(excluded))
+	for index := range excluded {
+		d.BTResInfo.ExcludeIndices = append(d.BTResInfo.ExcludeIndices, index)
+	}
+	sort.Ints(d.BTResInfo.ExcludeIndices)
+}
+
+func (d OfflineResolveData) excludedFileIndexes() map[int]struct{} {
+	if d.BTResInfo == nil || len(d.BTResInfo.ExcludeIndices) == 0 {
+		return map[int]struct{}{}
+	}
+	excluded := make(map[int]struct{}, len(d.BTResInfo.ExcludeIndices))
+	for _, index := range d.BTResInfo.ExcludeIndices {
+		excluded[index] = struct{}{}
+	}
+	return excluded
 }
 
 func isSuccessMsg(msg string) bool {

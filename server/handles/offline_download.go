@@ -310,11 +310,12 @@ func AddOfflineDownload(c *gin.Context) {
 		common.ErrorResp(c, err, 403)
 		return
 	}
-	if !common.CheckPathLimitWithRoles(user, reqPath) {
+	targetPath := tool.ResolveDstDirPath(req.Tool, reqPath)
+	if !common.CheckPathLimitWithRoles(user, targetPath) {
 		common.ErrorResp(c, errs.PermissionDenied, 403)
 		return
 	}
-	perm := common.MergeRolePermissions(user, reqPath)
+	perm := common.MergeRolePermissions(user, targetPath)
 	if !common.HasPermission(perm, common.PermAddOfflineDownload) {
 		common.ErrorStrResp(c, "permission denied", 403)
 		return

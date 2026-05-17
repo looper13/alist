@@ -32,3 +32,6 @@ output/
 /!public/dist/README.md
 
 .VSCodeCounter
+.playwright-mcp
+.tools
+tools
